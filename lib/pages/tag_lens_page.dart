@@ -23,7 +23,7 @@ class _TagLensPageState extends State<TagLensPage> {
   final picker = ImagePicker();
   final customTagController = TextEditingController();
 
-  final vision = GoogleVisionService(apiKey: "YOUR_GOOGLE_VISION_API_KEY");
+  final vision = GoogleVisionService(apiKey: "YOUR_GOOGLE_VISION_API_KEY");//APIキー発行しないと実行不可
   final local = LocalStorageService();
 
   Future<void> pickImage() async {

@@ -1,23 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
-
-Future<Uint8List> resizeImageBytes(Uint8List data) async {
-  // 画像をデコード
-  final original = img.decodeImage(data);
-  if (original == null) return data;
-
-  // 1/4 に縮小する（幅・高さどちらも 1/2 * 1/2 = 1/4）
-  final resized = img.copyResize(
-    original,
-    width: original.width ~/ 2,
-    height: original.height ~/ 2,
-  );
-
-  // JPEG として再エンコード
-  return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
-}
 
 class GoogleVisionService {
   final String apiKey;
@@ -25,9 +8,7 @@ class GoogleVisionService {
   GoogleVisionService({required this.apiKey});
 
   Future<List<String>> analyzeLabels(Uint8List bytes) async {
-    // 追加：送信前に1/4サイズに縮小
-    final resizedBytes = await resizeImageBytes(bytes);
-    final base64Image = base64Encode(resizedBytes);
+    final base64Image = base64Encode(bytes);
 
     final url = Uri.parse(
       "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyCQmFMGebUKwKal5xqLrPd86mGgcwjCTjc",
