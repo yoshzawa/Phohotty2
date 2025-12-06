@@ -14,3 +14,8 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+参考文献
+
+FireBaseStorageとの連携
+https://zenn.dev/joo_hashi/books/ddceed5b07c26a/viewer/c587c3
