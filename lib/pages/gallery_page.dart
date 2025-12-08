@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/local_storage.dart';
-
 class GalleryPage extends StatelessWidget {
   const GalleryPage({super.key});
 
