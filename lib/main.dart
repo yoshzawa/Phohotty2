@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: "/home",
+      initialRoute: "/gallery",
       routes: {
         "/home": (_) => const HomePage(),
         "/taglens": (_) => const TagLensPage(),
