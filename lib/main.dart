@@ -8,17 +8,19 @@ import 'pages/auth_page.dart';
 import 'services/fb_auth.dart';
 
 Future<void> main() async {
+  // Ensure Flutter engine is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
   await dotenv.load(fileName: '.env');
 
-  // Initialize Firebase before using any Firebase services
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Request storage permission at startup
-  final PermissionState ps = await PhotoManager.requestPermissionExtend();
-  debugPrint('Permission status: $ps');
+  // Request storage permission
+  await PhotoManager.requestPermissionExtend();
 
   runApp(const MyApp());
 }
@@ -33,15 +35,39 @@ class MyApp extends StatelessWidget {
       home: StreamBuilder<FbUser?>(
         stream: FbAuth.instance.authStateChanges,
         builder: (context, snapshot) {
-          // while waiting for auth state
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          // Case 1: An error occurred in the stream (e.g., Firebase config issue)
+          if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Error: Something went wrong with Firebase authentication. \n\n${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            );
           }
+
+          // Case 2: Waiting for the first authentication state event
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            // Show a loading indicator while we check the auth state.
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          // Case 3: We have data. Check if the user is logged in or not.
           final user = snapshot.data;
           if (user == null) {
+            // User is not logged in, show the authentication page.
             return const AuthPage();
+          } else {
+            // User is logged in, show the main app page.
+            return const MainTabPage();
           }
-          return const MainTabPage();
         },
       ),
     );
