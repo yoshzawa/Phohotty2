@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "404083870658-5ttp28nlsjo8j25p1aa7g7v37k34l9ri.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.phototty",
+            "certificate_hash": "97e7aed68b784e3a75b802f549ad42b19563a0dd"
+          }
+        },
+        {
           "client_id": "404083870658-d2i19oca3c8lromnirmol6sejtb4os2u.apps.googleusercontent.com",
           "client_type": 3
         }
