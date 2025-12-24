@@ -45,3 +45,7 @@ lib
 *   [`services/google_vision.dart`](google_vision.md): Google Vision APIサービス。
 *   [`services/local_storage.dart`](local_storage.md): ローカルストレージサービス。
 *   [`widgets/tag_chip.dart`](tag_chip.md): タグ表示用のチップウィジェット。
+
+# このディレクトリについて
+
+libの中のすべてのファイルをスキャンして、どのファイルで何をやっているのか、簡単に解説してほしいです。docs/libフォルダを作成し、どんなことをしているのか、説明するmdファイルを作成してください。
