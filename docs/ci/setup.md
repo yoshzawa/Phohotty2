@@ -1,29 +1,37 @@
-# CI/CD とローカル環境のセットアップ
+# CI/CDセットアップガイド
 
-このドキュメントでは、CI/CD環境およびローカル開発環境で `GoogleService-Info.plist` ファイルをセットアップする方法について説明します。
+このドキュメントは、CI/CD環境（例: Codemagic）をセットアップする手順について説明します。
 
-## `GoogleService-Info.plist` のセットアップ
+## 環境変数
 
-アプリケーションがFirebaseサービスに接続するためには `GoogleService-Info.plist` ファイルが必要ですが、セキュリティ上の理由からGitリポジトリにはチェックインされません。
+CI/CD環境では、以下の環境変数を設定する必要があります。
 
-ビルド時にこのファイルを自動生成するプロセスを自動化するために、`scripts/generate_google_service_info.sh` スクリプトを使用できます。このスクリプトは、環境変数に保存されているBase64エンコードされた `GoogleService-Info.plist` ファイルのバージョンをデコードします。
+### Firebase
 
-### 手順
+*   `GOOGLE_SERVICE_INFO_BASE64`: Firebaseプロジェクトの`GoogleService-Info.plist`（iOS用）をBase64でエンコードした文字列。
+*   `GOOGLE_SERVICES_JSON_BASE64`: Firebaseプロジェクトの`google-services.json`（Android用）をBase64でエンコードした文字列。
 
-1.  **`GoogleService-Info.plist` ファイルをエンコードします:**
+これらのファイルは、CI/CDのビルドプロセス中に、以下のスクリプトによってデコードされ、適切な場所に配置されます。
 
-    ```bash
-    base64 -i path/to/your/GoogleService-Info.plist
-    ```
+**`scripts/generate_google_service_info.sh` (iOS)**
 
-2.  **環境変数を設定します:**
+```sh
+echo $GOOGLE_SERVICE_INFO_BASE64 | base64 -d > ios/Runner/GoogleService-Info.plist
+```
 
-    Base64エンコードされた文字列をコピーし、CI/CDサービス（例：GitHub Actions, Codemagic）またはローカルの開発環境でシークリッﾄ環境変数として設定します。環境変数名は `GOOGLE_SERVICE_INFO_BASE64` である必要があります。
+**`scripts/generate_google_services_json.sh` (Android)**
 
-3.  **生成スクリプトを実行します:**
+```sh
+echo $GOOGLE_SERVICES_JSON_BASE64 | base64 -d > android/app/google-services.json
+```
 
-    ビルドプロセスの前に、スクリプトを実行して `GoogleService-Info.plist` ファイルを生成します:
+**重要:** `GoogleService-Info.plist`の出力先は、Xcodeが認識できるよう`ios/Runner/`ディレクトリである必要があります。
 
-    ```bash
-    ./scripts/generate_google_service_info.sh
-    ```
+### App Store Connect
+
+App Store Connectへのデプロイには、以下の環境変数が必要です。
+
+*   `APP_STORE_CONNECT_KEY_ID`: App Store Connect APIキーのキーID。
+*   `APP_STORE_CONNECT_ISSUER_ID`: App Store Connect APIキーの発行者ID。
+*   `APP_STORE_CONNECT_PRIVATE_KEY`: App Store Connect APIキーの秘密鍵。
+*   `APP_STORE_APPLE_ID`: アプリのApple ID。

@@ -3,7 +3,8 @@ require 'xcodeproj'
 
 # Xcode project and file paths
 project_path = 'ios/Runner.xcodeproj'
-file_path = 'ios/GoogleService-Info.plist'
+# This path MUST match the output of `generate_google_service_info.sh`
+file_path = 'ios/Runner/GoogleService-Info.plist'
 
 # The group in the Xcode project where the file will be added
 group_name = 'Runner'
@@ -14,13 +15,17 @@ project = Xcodeproj::Project.open(project_path)
 # Find the group
 group = project.main_group.find_subpath(group_name, true)
 
+# The file reference path should be relative to the group path
+file_ref_path = File.basename(file_path)
+
 # Check if the file reference already exists
-file_ref = group.files.find { |file| file.path == 'GoogleService-Info.plist' }
+file_ref = group.files.find { |file| file.path == file_ref_path }
 
 if file_ref
-  puts "File '#{file_path}' already exists in the project."
+  puts "File '#{file_ref_path}' already exists in the project."
 else
   # Add the file reference to the group
+  # The path given to `new_file` should be the actual path on disk
   file_ref = group.new_file(file_path)
 
   # Get the main target
