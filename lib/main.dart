@@ -23,9 +23,11 @@ Future<void> main() async {
     // 2. Initialize Firebase. This is a common point of failure if the
     //    platform-specific configuration files (e.g., GoogleService-Info.plist)
     //    are missing or incorrect.
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
 
     // 3. Request necessary permissions (e.g., for photo access).
     await PhotoManager.requestPermissionExtend();
