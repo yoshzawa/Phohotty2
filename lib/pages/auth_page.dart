@@ -66,20 +66,20 @@ class AuthPage extends StatelessWidget {
 										label: const Text('Googleでサインイン'),
 									),
 									const SizedBox(height: 8),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      try {
-                        final result = await FbAuth.instance.signInWithMicrosoft();
-                        if (result == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('サインインがキャンセルされました')));
-                        }
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('サインインに失敗しました: $e')));
-                      }
-                    },
-                    icon: const Icon(Icons.login),
-                    label: const Text('Microsoftでサインイン'),
-                  ),
+                  // ElevatedButton.icon(
+                  //   onPressed: () async {
+                  //     try {
+                  //       final result = await FbAuth.instance.signInWithMicrosoft();
+                  //       if (result == null) {
+                  //         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('サインインがキャンセルされました')));
+                  //       }
+                  //     } catch (e) {
+                  //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('サインインに失敗しました: $e')));
+                  //     }
+                  //   },
+                  //   icon: const Icon(Icons.login),
+                  //   label: const Text('Microsoftでサインイン'),
+                  // ),
 									const SizedBox(height: 8),
 									TextButton(
 										onPressed: () {

@@ -20,7 +20,7 @@ dependencies:
 
   # Auth - UPDATED
   google_sign_in: ^6.2.1
-  msal_mobile: ^2.1.0 # Correct version
+  # msal_mobile: ^2.1.0 # Temporarily commented out due to Dart 3 incompatibility
 
   # UI & Widgets - UPDATED
   cupertino_icons: ^1.0.8
