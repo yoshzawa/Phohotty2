@@ -18,11 +18,11 @@ Future<void> initializeAndRunApp() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Initialize Firebase (once)
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    }
+    // if (Firebase.apps.isEmpty) {
+    //   await Firebase.initializeApp(
+    //     options: DefaultFirebaseOptions.currentPlatform,
+    //   );
+    // }
 
     // Setup Crashlytics handlers
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
