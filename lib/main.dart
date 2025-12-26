@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -22,9 +23,6 @@ Future<void> initializeAndRunApp() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
-
-    // Initialize MSAL
-    FbAuth.instance.initializeMsal();
 
     // Setup Crashlytics handlers
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;

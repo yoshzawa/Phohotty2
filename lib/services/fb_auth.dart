@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-// import 'package:msal_mobile/msal_mobile.dart';
 
 class FbUser {
 	final String uid;
@@ -35,27 +34,6 @@ class FbAuth {
 	final FirebaseAuth _auth = FirebaseAuth.instance;
 	final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // TODO: Azure ADで払い出されたクライアントIDに書き換えてください
-  // static const String _clientId = '0416410b-6a99-4dfd-8f54-3f9361ed8e61';
-  // static const String _authority = 'https://login.microsoftonline.com/common';
-  // late PublicClientApplication _publicClientApplication;
-
-	// void initializeMsal() async {
-  //   _publicClientApplication = await PublicClientApplication.createPublicClientApplication(
-  //     androidConfig: AndroidConfig(
-  //       clientId: _clientId,
-  //       redirectUri: 'msal$_clientId://auth',
-  //       authority: _authority,
-  //     ),
-  //     iosConfig: IosConfig(
-  //       clientId: _clientId,
-  //       redirectUri: 'msal$_clientId://auth',
-  //       authority: _authority,
-  //     ),
-  //   );
-  // }
-
-
 	Stream<FbUser?> get authStateChanges =>
 			_auth.authStateChanges().map((u) => u == null ? null : FbUser.fromFirebaseUser(u));
 
@@ -83,32 +61,28 @@ class FbAuth {
 		}
 	}
 
-	// Future<FbUser?> signInWithMicrosoft() async {
-  //   try {
-  //     final result = await _publicClientApplication.acquireToken(scopes: ['user.read']);
-  //     final String accessToken = result.accessToken;
+	Future<FbUser?> signInWithMicrosoft() async {
+		try {
+			final provider = OAuthProvider('microsoft.com');
+			// デバイスの言語設定を利用しますが、必要に応じてロケールを指定できます
+			// provider.setCustomParameters({'locale': 'ja'});
 
-  //     final OAuthCredential credential = OAuthProvider('microsoft.com').credential(
-  //       accessToken: accessToken,
-  //     );
-      
-  //     final UserCredential userCredential = await _auth.signInWithCredential(credential);
-  //     final user = userCredential.user;
+			final UserCredential userCredential = await _auth.signInWithPopup(provider);
+			final user = userCredential.user;
 
-  //     if (user == null) return null;
-  //     return FbUser.fromFirebaseUser(user);
-  //   } catch (e) {
-  //     // Handle exceptions
-  //     print(e);
-  //     rethrow;
-  //   }
-  // }
+			if (user == null) return null;
+			return FbUser.fromFirebaseUser(user);
+		} catch (e) {
+			// Handle exceptions (e.g., user closes the popup)
+			print(e);
+			return null;
+		}
+	}
 
 	Future<void> signOut() async {
 		await _auth.signOut();
 		try {
 			await _googleSignIn.signOut();
-      // await _publicClientApplication.logout();
 		} catch (_) {}
 	}
 }
