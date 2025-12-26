@@ -1,48 +1,43 @@
-# `main.dart`
+'''
+# `main.dart` - アプリケーションのエントリーポイント
 
-**ファイルパス:** `lib/main.dart`
+`main.dart`は、Flutterアプリケーション全体の起動と初期化を担当する中心的なファイルです。
 
-## 概要
+## 主要な役割
 
-`main.dart` は、アプリケーション全体の起動シーケンスを管理するエントリーポイントです。
-このファイルは、必要なサービスの初期化、エラーハンドリング、そしてユーザーの認証状態に基づいた初期画面の表示を担当します。
+1.  **初期化処理の実行**: アプリケーションがUIを描画する前に必要な、すべての非同期初期化処理を管理します。
+2.  **認証状態の監視**: Firebase Authenticationの認証状態を監視し、ユーザーがログインしているかどうかに基づいて表示する画面を切り替えます。
+3.  **トップレベルのエラーハンドリング**: アプリケーションのどのレイヤーで発生したかに関わらず、キャッチされなかった致命的なエラーを捕捉し、記録します。
 
-## 主要な構成要素
+## 初期化シーケンス (`initializeAndRunApp`)
 
-### `main()` 関数
+アプリケーションの起動ロジックは`initializeAndRunApp`関数に集約されており、`main`関数から`runZonedGuarded`を介して安全に呼び出されます。
 
-- **役割**: アプリケーションの最上位エントリーポイント。
-- **機能**:
-    - `runZonedGuarded` を使用して、Flutterフレームワークで捕捉されない未処理のエラー（非同期エラーなど）をグローバルに捕捉し、Crashlyticsに報告します。
-    - `initializeAndRunApp()` 関数を呼び出して、アプリの起動処理を開始します。
+主な初期化ステップは以下の通りです。
 
-### `initializeAndRunApp()` 関数
+1.  **Flutter Engineのバインディング**: `WidgetsFlutterBinding.ensureInitialized()`を呼び出し、プラグインがネイティブコードと通信できるようにします。
+2.  **Firebaseの初期化**: `Firebase.initializeApp()`を実行し、Firebaseサービスを利用可能にします。
+3.  **MSAL (Microsoft Authentication Library) の初期化**: `FbAuth.instance.initializeMsal()`を呼び出し、Microsoftサインインの準備をします。 **(注: 現在この機能は互換性の問題で一時的に無効化されています)**
+4.  **Crashlyticsの設定**: `FlutterError.onError`と`PlatformDispatcher.instance.onError`をオーバーライドし、Flutterフレームワーク内外で発生したエラーをFirebase Crashlyticsに送信します。
+5.  **環境変数のロード**: `.env`ファイルから環境変数（APIキーなど）をロードします。
+6.  **写真ライブラリへの権限要求**: `PhotoManager.requestPermissionExtend()`を呼び出し、ギャラリーへのアクセス許可をユーザーに求めます。
 
-- **役割**: すべての初期化処理を中央集権的に実行します。
-- **機能**:
-    - `WidgetsFlutterBinding.ensureInitialized()`: Flutterエンジンの準備を保証します。
-    - **Firebaseの初期化**: `Firebase.apps.isEmpty` チェックを行い、二重初期化を防止します。
-    - **Crashlyticsの設定**: Flutterフレームワーク内で発生したエラーをCrashlyticsに送信するよう設定します。
-    - **`.env`ファイルの読み込み**: `flutter_dotenv` を使用して環境変数をロードします。
-    - **権限要求**: `photo_manager` を使用して、フォトライブラリへのアクセス許可を要求します。
-    - **初期化の成否判定**:
-        - すべての初期化が成功した場合、`runApp(const MyApp())` を呼び出してメインアプリを起動します。
-        - 初期化中に何らかのエラーが発生した場合、`runApp(InitializationErrorScreen(...))` を呼び出してエラー画面を表示します。
+### 初期化エラーハンドリング
 
-### `MyApp` ウィジェット
+`try-catch`ブロックを使用して、初期化プロセス中に発生した例外を捕捉します。エラーが発生した場合、通常のアプリ（`MyApp`）の代わりに`InitializationErrorScreen`ウィジェットが描画されます。この画面には、ユーザーが初期化処理を再試行するためのボタンが表示されます。
+エラー情報は`FirebaseCrashlytics`にも送信され、開発者が問題を追跡できるようにしています。
 
-- **役割**: メインアプリケーションのルートウィジェット。
-- **機能**:
-    - `StreamBuilder` を使用して `FbAuth.instance.authStateChanges`（Firebaseの認証状態ストリーム）を監視します。
-    - **認証状態に応じた画面遷移**:
-        - 認証状態の読み込み中は、`CircularProgressIndicator` を表示します。
-        - ユーザーがログインしている場合 (`snapshot.hasData` が `true`)、`MainTabPage` を表示します。
-        - ユーザーがログインしていない場合、`AuthPage` を表示して認証を促します。
-        - ストリームでエラーが発生した場合は、エラーメッセージを表示し、そのエラーをCrashlyticsに報告します。
+## アプリケーション本体 (`MyApp`)
 
-### `InitializationErrorScreen` ウィジェット
+初期化が正常に完了すると、`runApp(const MyApp())`が実行されます。
 
-- **役割**: 初期化プロセスが失敗した際に表示されるフォールバックUI。
-- **機能**:
-    - アプリの起動に失敗したことをユーザーに通知します。
-    - 「Retry」ボタンを提供し、ユーザーが `initializeAndRunApp()` を再実行して初期化を再試行できるようにします。
+`MyApp`は`MaterialApp`をルートウィジェットとし、`StreamBuilder`を使用して`FbAuth.instance.authStateChanges`ストリームを監視します。
+
+-   **ストリームがデータを返すまで**: `CircularProgressIndicator`を表示します。
+-   **ストリームがエラーを返した場合**: エラーメッセージを表示し、そのエラーをCrashlyticsに記録します。
+-   **ストリームがデータを返した場合**:
+    -   ユーザーデータが存在する（`snapshot.hasData`が`true`）場合、ログイン済みと判断し、`MainTabPage`を表示します。
+    -   ユーザーデータが存在しない場合、未ログインと判断し、`AuthPage`を表示します。
+
+これにより、リアクティブな方法で認証状態の変更に対応し、適切な画面へユーザーを誘導することができます。
+'''

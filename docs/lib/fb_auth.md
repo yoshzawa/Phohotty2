@@ -1,42 +1,41 @@
-# `fb_auth.dart` - Firebase認証サービス
+'''
+# `fb_auth.dart` - Firebase Authentication サービスクラス
 
-`fb_auth.dart`は、Firebase Authenticationを利用したユーザー認証機能を一元管理するシングルトンクラス`FbAuth`を提供します。
+`fb_auth.dart`は、Firebase Authenticationに関連するすべてのロジックをカプセル化し、UI層から抽象化するためのサービスクラスです。
+シングルトンパターン（`FbAuth.instance`）で実装されており、アプリケーションのどこからでも同じインスタンスにアクセスできます。
 
-## 主な機能
+## 主要な機能
 
-- **ユーザー認証状態の監視:**
-  - `authStateChanges`ストリームを通じて、ユーザーのログイン状態（サインイン、サインアウト）の変更をリアルタイムで監視します。
+-   **認証状態の提供**: ユーザーのログイン状態が変化したことを通知する`Stream`（`authStateChanges`）を提供します。
+-   **サインイン処理**: Googleなどの外部プロバイダを利用したサインイン機能を提供します。
+-   **サインアウト処理**: 現在のユーザーをサインアウトさせる機能を提供します。
+-   **ユーザー情報の抽象化**: Firebaseの`User`オブジェクトを、よりシンプルなカスタムクラス`FbUser`に変換して提供します。
 
-- **多様なサインイン方法:**
-  - **Googleサインイン:** `signInWithGoogle()`メソッドにより、ユーザーはGoogleアカウントを使用してアプリにサインインできます。
-  - **Microsoftサインイン:** `signInWithMicrosoft()`メソッドにより、ユーザーはMicrosoftアカウント（Azure Active Directory）を使用してアプリにサインインできます。この機能は`msal_mobile`ライブラリを利用して実装されています。
+## クラスとメソッド
 
-- **サインアウト:**
-  - `signOut()`メソッドは、Firebaseからのサインアウトと、GoogleやMicrosoftなど連携しているプロバイダからのサインアウトを両方行います。
+### `FbUser` クラス
 
-- **ユーザー情報の取得:**
-  - `currentUser`ゲッターを通じて、現在ログインしているユーザーの情報を`FbUser`オブジェクトとして取得できます。
+Firebaseの`User`オブジェクトから必要な情報（UID, 表示名, メールアドレスなど）のみを抽出した、読み取り専用のシンプルなデータクラスです。
+UI層は`User`オブジェクトに直接依存せず、この`FbUser`を介してユーザー情報を扱います。
 
-## `FbUser`クラス
+### `FbAuth` クラス
 
-`FbUser`は、Firebaseの`User`オブジェクトをラップし、アプリケーションで使いやすいように整形したカスタムクラスです。以下の情報を含みます。
+#### プロパティ
 
-- `uid`: ユーザーの一意なID
-- `displayName`: 表示名
-- `email`: メールアドレス
-- `photoUrl`: プロフィール写真のURL
-- `providers`: 認証に使用されたプロバイダのリスト（例: `google.com`, `microsoft.com`）
+-   `Stream<FbUser?> authStateChanges`: 認証状態の変化をストリームで通知します。ユーザーがログイン/ログアウトすると、新しい`FbUser`オブジェクトまたは`null`が流れます。
+-   `FbUser? currentUser`: 現在ログインしているユーザーの情報を`FbUser`オブジェクトとして同期的に取得します。
 
-## Microsoftサインインの実装詳細
+#### メソッド
 
-Microsoftサインインは、OAuth 2.0認証フローを`msal_mobile`ライブラリを使用して実装しています。
+-   `Future<FbUser?> signInWithGoogle()`: Googleサインインのフローを開始します。成功すると`FbUser`オブジェクトを返し、ユーザーがキャンセルした場合は`null`を返します。
 
-1.  **初期化:** アプリ起動時に`main.dart`から`initializeMsal()`が呼び出され、クライアントIDやリダイレクトURIなどの設定を持つ`PublicClientApplication`が初期化されます。
+-   `Future<void> signOut()`: Firebaseからのサインアウトと、Googleサインインからのサインアウトを両方実行します。
 
-2.  **トークン取得:** `signInWithMicrosoft()`が呼び出されると、`acquireToken()`メソッドが実行され、ユーザーにMicrosoftの認証画面が表示されます。認証に成功すると、アクセストークンが返されます。
+### 【重要】Microsoft サインインについて
 
-3.  **Firebaseへの連携:** 取得したアクセストークンを使って`OAuthProvider`のクレデンシャル（資格情報）を作成し、`FirebaseAuth.instance.signInWithCredential()`を呼び出すことでFirebaseへのサインインを実現します。
+現在、`signInWithMicrosoft`メソッドと、それに必要な`msal_mobile`パッケージの初期化処理（`initializeMsal`）は**コメントアウトされています。**
 
-## 注意事項
+これは、`msal_mobile`がDart 3のバージョンと互換性がなく、ビルドエラーを引き起こすためです。
 
-- **クライアントIDの設定:** Microsoftサインインを正しく機能させるには、Azure ADで発行されたクライアントIDを`fb_auth.dart`内の`_clientId`定数と、iOSプロジェクトの`Info.plist`に正しく設定する必要があります。
+今後の改修で、`firebase_auth`が標準で提供する`OAuthProvider`を利用したWebベースの認証フローへの置き換えが推奨されます。詳細な手順については`docs/auth/ios_auth_setup.md`を参照してください。
+'''
