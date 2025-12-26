@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_microsoft_authentication/flutter_microsoft_authentication.dart';
 
 class FbUser {
 	final String uid;
@@ -33,6 +34,15 @@ class FbAuth {
 
 	final FirebaseAuth _auth = FirebaseAuth.instance;
 	final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // TODO: Azure ADで払い出されたテナントIDとクライアントIDに書き換えてください
+	final FlutterMicrosoftAuthentication _microsoftSignIn = FlutterMicrosoftAuthentication(
+      kTenantId: "YOUR_TENANT_ID",
+      kClientId: "YOUR_CLIENT_ID",
+      kScope: "User.Read",
+      kRedirectUri: "msauth.jp.ac.jc21.Phohotty2://auth",
+      kAuthority: "https://login.microsoftonline.com/organizations"
+  );
+
 
 	Stream<FbUser?> get authStateChanges =>
 			_auth.authStateChanges().map((u) => u == null ? null : FbUser.fromFirebaseUser(u));
@@ -63,19 +73,23 @@ class FbAuth {
 
 	Future<FbUser?> signInWithMicrosoft() async {
 		try {
-			final provider = OAuthProvider('microsoft.com');
-			// デバイスの言語設定を利用しますが、必要に応じてロケールを指定できます
-			// provider.setCustomParameters({'locale': 'ja'});
-
-			final UserCredential userCredential = await _auth.signInWithPopup(provider);
+      final String? accessToken = await _microsoftSignIn.getAccessToken();
+      if (accessToken == null) {
+        print('Access token is null');
+        return null;
+      }
+      final OAuthCredential credential = OAuthProvider('microsoft.com').credential(
+        accessToken: accessToken,
+      );
+			final UserCredential userCredential = await _auth.signInWithCredential(credential);
 			final user = userCredential.user;
 
 			if (user == null) return null;
 			return FbUser.fromFirebaseUser(user);
 		} catch (e) {
-			// Handle exceptions (e.g., user closes the popup)
+			// Handle exceptions
 			print(e);
-			return null;
+			rethrow;
 		}
 	}
 
@@ -83,6 +97,7 @@ class FbAuth {
 		await _auth.signOut();
 		try {
 			await _googleSignIn.signOut();
+      await _microsoftSignIn.signOut();
 		} catch (_) {}
 	}
 }

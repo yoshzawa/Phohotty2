@@ -61,6 +61,14 @@
 				<string>com.googleusercontent.apps.404083870658-1ar0mt7qfafj71cj6bjip53fmdqk7oni</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>msauth.jp.ac.jc21.Phohotty2</string>
+			</array>
+		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
