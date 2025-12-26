@@ -66,10 +66,15 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>msauth.jp.ac.jc21.Phohotty2</string>
+				<string>msal0416410b-6a99-4dfd-8f54-3f9361ed8e61</string>
 			</array>
 		</dict>
 	</array>
+  <key>LSApplicationQueriesSchemes</key>
+  <array>
+      <string>msauthv2</string>
+      <string>msauthv3</string>
+  </array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
