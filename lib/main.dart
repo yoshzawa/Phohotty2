@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
-import 'pages/main_tab_page.dart';
 import 'pages/auth_page.dart';
-import 'services/fb_auth.dart';
 
 // Wrapped the initialization and app run logic in a function to support retries.
 Future<void> initializeAndRunApp() async {
@@ -16,11 +15,17 @@ Future<void> initializeAndRunApp() async {
     // --- Centralized Initialization ---
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Initialize Firebase (once) by checking if any apps are already initialized.
-    if (Firebase.apps.isEmpty) {
+    // Initialize Firebase idempotently. This can be called multiple times safely.
+    try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+    } on FirebaseException catch (e) {
+      if (e.code != 'duplicate-app') {
+        // Rethrow if it's not a duplicate app error.
+        rethrow;
+      }
+      // If it's a duplicate app error, it means Firebase is already initialized, so we can safely continue.
     }
 
     // --- DotEnv Initialization ---
@@ -40,14 +45,14 @@ Future<void> initializeAndRunApp() async {
     await PhotoManager.requestPermissionExtend();
 
     // --- Run Main App ---
-    // Use the correct widget name 'AuthPage' instead of 'AuthGate'.
     runApp(const AuthPage());
 
   } catch (e, s) {
     // --- Run Error App ---
     // If initialization fails, record the error and show an error screen with details.
     final errorMessage = e.toString();
-    if (Firebase.apps.isNotEmpty) {
+    // Try to report to Crashlytics, but check if Firebase is available first.
+    if (Firebase.apps.isNotEmpty && FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
       FirebaseCrashlytics.instance.recordError(e, s, reason: 'App initialization failed');
     } else {
       debugPrint('Firebase not available. Could not report initialization error to Crashlytics.');
@@ -63,14 +68,14 @@ void main() {
     initializeAndRunApp,
     (error, stack) {
       // This is a top-level error handler.
-      if (Firebase.apps.isNotEmpty) {
+      if (Firebase.apps.isNotEmpty && FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       }
     },
   );
 }
 
-// Stateless widget to show when initialization fails, now with error details.
+// Enhanced error screen with diagnostic information.
 class InitializationErrorScreen extends StatelessWidget {
   final String error;
   final VoidCallback onRetry;
@@ -78,7 +83,15 @@ class InitializationErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- Check current states for diagnostics ---
+    final isFirebaseInitialized = Firebase.apps.isNotEmpty;
+    User? currentUser;
+    if (isFirebaseInitialized) {
+      currentUser = FirebaseAuth.instance.currentUser;
+    }
+
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
           child: Padding(
@@ -94,7 +107,7 @@ class InitializationErrorScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '詳細: $error',
+                  'エラー詳細: $error',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade700),
                 ),
@@ -104,6 +117,49 @@ class InitializationErrorScreen extends StatelessWidget {
                   label: const Text('再試行'),
                   onPressed: onRetry,
                 ),
+
+                // --- Diagnostic Info Section ---
+                const SizedBox(height: 32),
+                const Divider(),
+                const SizedBox(height: 12),
+                const Text(
+                  '現在の状態 (デバッグ用)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isFirebaseInitialized ? Icons.check_circle : Icons.cancel,
+                      color: isFirebaseInitialized ? Colors.green : Colors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Firebase 初期化: ${isFirebaseInitialized ? "完了" : "未完了"}'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      currentUser != null ? Icons.person_rounded : Icons.person_off_outlined,
+                      color: currentUser != null ? Colors.blue : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('サインイン状態: ${currentUser != null ? "サインイン済み" : "未サインイン"}'),
+                  ],
+                ),
+                if (currentUser != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      '(ユーザー: ${currentUser.email ?? currentUser.uid})',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                    ),
+                  ),
               ],
             ),
           ),
