@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../services/local_storage.dart';
 
 class GalleryPage extends StatefulWidget {
@@ -17,31 +16,29 @@ class _GalleryPageState extends State<GalleryPage> {
   @override
   void initState() {
     super.initState();
-    _galleryFuture = _loadGalleryWithPermissionCheck();
+    // 不要な権限チェックを削除し、直接ギャラリーを読み込む
+    _galleryFuture = local.loadGallery();
   }
 
-  Future<List<Map<String, dynamic>>> _loadGalleryWithPermissionCheck() async {
-    // 1. Permission Check
-    var status = await Permission.photos.status;
-    if (status.isDenied) {
-      // 2. Request Permission
-      status = await Permission.photos.request();
-    }
-
-    if (status.isGranted) {
-      // 3. Load Gallery if permission is granted
-      return local.loadGallery();
-    } else {
-      // 4. Handle permission denial
-      // You can show a dialog or a message to the user.
-      throw Exception('Photo library permission was denied.');
-    }
+  void _reloadGallery() {
+    setState(() {
+      _galleryFuture = local.loadGallery();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("ギャラリー")),
+      appBar: AppBar(
+        title: const Text("ギャラリー"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _reloadGallery,
+            tooltip: "更新",
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -51,7 +48,8 @@ class _GalleryPageState extends State<GalleryPage> {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.label),
                 label: const Text("画像にタグ付け"),
-                onPressed: () => Navigator.pushNamed(context, "/tag-lens"),
+                // ページ遷移後にギャラリーをリロードするために、.then() を使用
+                onPressed: () => Navigator.pushNamed(context, "/tag-lens").then((_) => _reloadGallery()),
               ),
             ),
           ),
@@ -63,8 +61,9 @@ class _GalleryPageState extends State<GalleryPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
+                  // 主にファイルの読み込みエラーなどをキャッチする
                   return Center(
-                      child: Text("エラー: ${snapshot.error}",
+                      child: Text("エラーが発生しました: ${snapshot.error}",
                           style: const TextStyle(color: Colors.red)));
                 }
                 final items = snapshot.data;
@@ -93,6 +92,24 @@ class _GalleryPageState extends State<GalleryPage> {
         final filePath = item["path"];
         final tags = (item["tags"] as List).join(", ");
 
+        // ファイルが存在しない場合のエラーハンドリングを追加
+        final file = File(filePath);
+        if (!file.existsSync()) {
+          return Container(
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.broken_image, color: Colors.grey),
+                  SizedBox(height: 8),
+                  Text("画像なし", style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          );
+        }
+
         return GridTile(
           footer: GridTileBar(
             backgroundColor: Colors.black45,
@@ -103,7 +120,7 @@ class _GalleryPageState extends State<GalleryPage> {
               style: const TextStyle(fontSize: 12),
             ),
           ),
-          child: Image.file(File(filePath), fit: BoxFit.cover),
+          child: Image.file(file, fit: BoxFit.cover),
         );
       },
     );
