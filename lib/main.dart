@@ -4,10 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
 import 'pages/auth_page.dart';
+
+void main() {
+  // Use runZonedGuarded to catch any errors that are not caught by Flutter.
+  runZonedGuarded<Future<void>>(
+    initializeAndRunApp,
+    (error, stack) {
+      // This is a top-level error handler.
+      // Ensure we can report the error to Crashlytics if initialized.
+      if (Firebase.apps.isNotEmpty && FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      }
+    },
+  );
+}
 
 // Wrapped the initialization and app run logic in a function to support retries.
 Future<void> initializeAndRunApp() async {
@@ -22,57 +36,54 @@ Future<void> initializeAndRunApp() async {
       );
     } on FirebaseException catch (e) {
       if (e.code != 'duplicate-app') {
-        // Rethrow if it's not a duplicate app error.
         rethrow;
       }
-      // If it's a duplicate app error, it means Firebase is already initialized, so we can safely continue.
     }
 
     // --- DotEnv Initialization ---
     await dotenv.load(fileName: ".env");
 
     // --- Crashlytics Configuration ---
-    // Pass all uncaught "fatal" errors from the framework to Crashlytics.
     FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics.
     PlatformDispatcher.instance.onError = (error, stack) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
 
     // --- Photo Manager Initialization ---
-    // Pre-request permissions for the photo manager to avoid delays later.
     await PhotoManager.requestPermissionExtend();
 
     // --- Run Main App ---
-    runApp(const AuthPage());
+    runApp(const MyApp()); // Run the main app widget which contains MaterialApp
 
   } catch (e, s) {
     // --- Run Error App ---
-    // If initialization fails, record the error and show an error screen with details.
     final errorMessage = e.toString();
-    // Try to report to Crashlytics, but check if Firebase is available first.
     if (Firebase.apps.isNotEmpty && FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
       FirebaseCrashlytics.instance.recordError(e, s, reason: 'App initialization failed');
     } else {
-      debugPrint('Firebase not available. Could not report initialization error to Crashlytics.');
-      debugPrint(errorMessage);
+      debugPrint('Initialization error: $e');
     }
     runApp(InitializationErrorScreen(error: errorMessage, onRetry: initializeAndRunApp));
   }
 }
 
-void main() {
-  // Use runZonedGuarded to catch any errors that are not caught by Flutter.
-  runZonedGuarded<Future<void>>(
-    initializeAndRunApp,
-    (error, stack) {
-      // This is a top-level error handler.
-      if (Firebase.apps.isNotEmpty && FirebaseCrashlytics.instance.isCrashlyticsCollectionEnabled) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      }
-    },
-  );
+// The root widget of the application, providing MaterialApp.
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Phohotty',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: const AuthPage(), // AuthPage will handle UI based on auth state
+    );
+  }
 }
 
 // Enhanced error screen with diagnostic information.
@@ -87,7 +98,12 @@ class InitializationErrorScreen extends StatelessWidget {
     final isFirebaseInitialized = Firebase.apps.isNotEmpty;
     User? currentUser;
     if (isFirebaseInitialized) {
-      currentUser = FirebaseAuth.instance.currentUser;
+      try {
+        currentUser = FirebaseAuth.instance.currentUser;
+      } catch (e) {
+        // In case accessing currentUser throws (e.g., during plugin registration issues)
+        debugPrint('Could not retrieve current user: $e');
+      }
     }
 
     return MaterialApp(
@@ -117,8 +133,6 @@ class InitializationErrorScreen extends StatelessWidget {
                   label: const Text('再試行'),
                   onPressed: onRetry,
                 ),
-
-                // --- Diagnostic Info Section ---
                 const SizedBox(height: 32),
                 const Divider(),
                 const SizedBox(height: 12),
