@@ -40,7 +40,8 @@ Future<void> initializeAndRunApp() async {
     await PhotoManager.requestPermissionExtend();
 
     // --- Run Main App ---
-    runApp(const AuthGate());
+    // Use the correct widget name 'AuthPage' instead of 'AuthGate'.
+    runApp(const AuthPage());
 
   } catch (e, s) {
     // --- Run Error App ---
