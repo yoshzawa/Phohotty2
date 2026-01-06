@@ -54,23 +54,23 @@ class _MainTabPageState extends State<MainTabPage> {
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.photo_album),
-            label: 'Gallery',
+            label: '写真一覧',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Tag Lens',
+            label: 'タグ付け',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Map',
+            label: '画像マップ',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.share),
-            label: 'SNS',
+            label: 'SNS投稿',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Settings',
+            label: '設定',
           ),
         ],
         currentIndex: _selectedIndex,

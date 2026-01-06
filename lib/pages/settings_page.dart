@@ -75,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           SwitchListTile(
             title: const Text('AIによる画像へのタグ付け機能'),
-            subtitle: const Text('Vision AI を使用して画像に自動でタグを付ける'),
+            subtitle: const Text('Vision AI を使用して画像に自動でタグを付ける 再起動時反映されます'),
             value: _aiTaggingEnabled,
             onChanged: _saveAiTaggingEnabled,
           ),
