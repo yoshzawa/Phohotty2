@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/fb_auth.dart';
 import 'user_create_page.dart';
+import 'user_signin_page.dart';
 
 class AuthPage extends StatelessWidget {
 	const AuthPage({super.key});
@@ -73,6 +74,14 @@ class AuthPage extends StatelessWidget {
 											);
 										},
 										child: const Text('メールでユーザー作成'),
+									),
+									TextButton(
+										onPressed: () {
+											Navigator.of(context).push(
+												MaterialPageRoute(builder: (_) => const UserSignInPage()),
+											);
+										},
+										child: const Text('既存アカウントでサインイン'),
 									),
 								],
 							);
