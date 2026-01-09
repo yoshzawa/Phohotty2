@@ -204,7 +204,7 @@ class _TagLensPageState extends State<TagLensPage> {
                       ),
                       child: imageBytes == null
                           ? const Center(
-                              child: Text('クリックして画像を選択 v2'),//v2：更新の確認
+                              child: Text('クリックして画像を選択'),//v2：更新の確認
                             )
                           : Image.memory(imageBytes!, fit: BoxFit.cover),
                     ),

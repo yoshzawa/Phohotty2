@@ -1,5 +1,6 @@
 
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'local_storage.dart';
 
@@ -19,17 +20,27 @@ class TagImageSaver {
     required String uid,
   }) async {
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final storagePath = 'users/$uid/$fileName';
 
+    final storagePath = 'users/$uid/$fileName';
     final storageRef = FirebaseStorage.instance.ref().child(storagePath);
     final metadata = SettableMetadata(contentType: 'image/jpeg');
 
     final uploadTask = storageRef.putData(imageBytes, metadata);
     await uploadTask;
     final downloadUrl = await storageRef.getDownloadURL();
+  
 
-    // SharedPreferences に保存
     await _localStorage.saveImageTags(downloadUrl, tags);
+
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('gallery')
+        .doc(fileName)
+        .set({
+          'tagList': tags,
+        });
 
     return downloadUrl;
   }
