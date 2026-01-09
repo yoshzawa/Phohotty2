@@ -2,15 +2,43 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/local_storage.dart';
 
-class GalleryPage extends StatelessWidget {
+class GalleryPage extends StatefulWidget {
   const GalleryPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final local = LocalStorageService();
+  State<GalleryPage> createState() => _GalleryPageState();
+}
 
+class _GalleryPageState extends State<GalleryPage> {
+  final local = LocalStorageService();
+  late Future<List<Map<String, dynamic>>> _galleryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // 不要な権限チェックを削除し、直接ギャラリーを読み込む
+    _galleryFuture = local.loadGallery();
+  }
+
+  void _reloadGallery() {
+    setState(() {
+      _galleryFuture = local.loadGallery();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("ギャラリー")),
+      appBar: AppBar(
+        title: const Text("ギャラリー"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _reloadGallery,
+            tooltip: "更新",
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
@@ -20,19 +48,23 @@ class GalleryPage extends StatelessWidget {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.label),
                 label: const Text("画像にタグ付け"),
-                onPressed: () => Navigator.pushNamed(context, "/tag-lens"),
+                // ページ遷移後にギャラリーをリロードするために、.then() を使用
+                onPressed: () => Navigator.pushNamed(context, "/tag-lens").then((_) => _reloadGallery()),
               ),
             ),
           ),
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: local.loadGallery(),
+              future: _galleryFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text("エラー: ${snapshot.error}"));
+                  // 主にファイルの読み込みエラーなどをキャッチする
+                  return Center(
+                      child: Text("エラーが発生しました: ${snapshot.error}",
+                          style: const TextStyle(color: Colors.red)));
                 }
                 final items = snapshot.data;
                 if (items == null || items.isEmpty) {
@@ -60,6 +92,24 @@ class GalleryPage extends StatelessWidget {
         final filePath = item["path"];
         final tags = (item["tags"] as List).join(", ");
 
+        // ファイルが存在しない場合のエラーハンドリングを追加
+        final file = File(filePath);
+        if (!file.existsSync()) {
+          return Container(
+            color: Colors.grey.shade200,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.broken_image, color: Colors.grey),
+                  SizedBox(height: 8),
+                  Text("画像なし", style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          );
+        }
+
         return GridTile(
           footer: GridTileBar(
             backgroundColor: Colors.black45,
@@ -70,7 +120,7 @@ class GalleryPage extends StatelessWidget {
               style: const TextStyle(fontSize: 12),
             ),
           ),
-          child: Image.file(File(filePath), fit: BoxFit.cover),
+          child: Image.file(file, fit: BoxFit.cover),
         );
       },
     );

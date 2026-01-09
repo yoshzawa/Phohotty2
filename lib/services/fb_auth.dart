@@ -61,6 +61,24 @@ class FbAuth {
 		}
 	}
 
+	Future<FbUser?> signInWithMicrosoft() async {
+		try {
+			final provider = OAuthProvider('microsoft.com');
+			// デバイスの言語設定を利用しますが、必要に応じてロケールを指定できます
+			// provider.setCustomParameters({'locale': 'ja'});
+
+			final UserCredential userCredential = await _auth.signInWithPopup(provider);
+			final user = userCredential.user;
+
+			if (user == null) return null;
+			return FbUser.fromFirebaseUser(user);
+		} catch (e) {
+			// Handle exceptions (e.g., user closes the popup)
+			print(e);
+			return null;
+		}
+	}
+
 	Future<void> signOut() async {
 		await _auth.signOut();
 		try {
@@ -68,4 +86,3 @@ class FbAuth {
 		} catch (_) {}
 	}
 }
-

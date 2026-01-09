@@ -39,10 +39,10 @@ class _MainTabPageState extends State<MainTabPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AuthPage()),
+                MaterialPageRoute(builder: (context) => const AuthPage()),
               );
             },
-            child: Text('アカウント'),
+            child: const Text('アカウント'),
           ),
         ],
       ),

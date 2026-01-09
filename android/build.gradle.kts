@@ -38,6 +38,8 @@ plugins {
     // ...
 
     // Add the dependency for the Google services Gradle plugin
-    id("com.google.gms.google-services") version "4.4.4" apply false
+    id("com.google.gms.google-services") version "4.3.15" apply false
+    id("com.google.firebase.crashlytics") version "3.0.1" apply false
+
 
 }

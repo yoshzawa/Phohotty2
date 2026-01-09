@@ -2,6 +2,8 @@
 
 このドキュメントは`lib`ディレクトリ内のファイルとその機能の概要をまとめたものです。
 
+**重要:** `lib`ディレクトリ内の`.dart`ファイルを修正した場合は、必ず対応する`docs/lib`内のMarkdownドキュメントも更新してください。これにより、コードとドキュメントの同期が保たれ、プロジェクトの保守性が向上します。
+
 ## ファイル構成
 
 ```
@@ -29,19 +31,12 @@ lib
 
 ## ファイル概要
 
-*   [`main.dart`](main.md): アプリケーションのエントリーポイント。
-*   [`firebase_options.dart`](#): Firebaseの接続情報。
-*   [`pages/album_page.dart`](album_page.md): アルバムページ。
-*   [`pages/auth_page.dart`](auth_page.md): 認証ページ。
-*   [`pages/gallery_page.dart`](gallery_page.md): ギャラリーページ。
-*   [`pages/home_page.dart`](home_page.md): ホームページ。
-*   [`pages/main_tab_page.dart`](main_tab_page.md): メインのタブページ。
-*   [`pages/map_page.dart`](map_page.md): マップページ。
-*   [`pages/settings_page.dart`](settings_page.md): 設定ページ。
-*   [`pages/sns_page.dart`](sns_page.md): SNSページ。
-*   [`pages/tag_lens_page.dart`](tag_lens_page.md): タグ付けページ。
-*   [`pages/user_create_page.dart`](user_create_page.md): ユーザー作成ページ。
-*   [`services/fb_auth.dart`](fb_auth.md): Firebase認証サービス。
-*   [`services/google_vision.dart`](google_vision.md): Google Vision APIサービス。
-*   [`services/local_storage.dart`](local_storage.md): ローカルストレージサービス。
-*   [`widgets/tag_chip.dart`](tag_chip.md): タグ表示用のチップウィジェット。
+このセクションでは、`lib`ディレクトリ内の主要なファイルについて、その目的と機能の概要を説明します。詳細は各ファイルへのリンク先ドキュメントを参照してください。
+
+- **[`main.dart`](main.md)**: アプリケーションの**エントリーポイント**です。各種サービスの初期化、認証状態の監視を行い、ユーザーがログインしているかどうかに応じて適切な初期画面（`AuthPage`または`MainTabPage`）を表示します。
+
+- **[`services/fb_auth.dart`](fb_auth.md)**: **Firebase認証サービス**を管理します。このファイルは、Firebase Authenticationに関するすべてのロジックをカプセル化し、サインイン、サインアウト、ユーザー情報の取得などの機能を提供します。GoogleおよびMicrosoftアカウントによる認証処理をサポートしています。
+
+- **[`pages/settings_page.dart`](settings_page.md)**: **設定画面**です。現在はプレースホルダーですが、将来的には通知設定などの機能が実装される予定です。
+
+*(ここに他のファイルの概要を追記していきます)*
