@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../routes.dart';
 import '../widgets/tag_chip.dart';
 import '../services/google_vision.dart';
 import '../services/tag_translator.dart';
@@ -164,7 +165,7 @@ class _TagLensPageState extends State<TagLensPage> {
         ),
       );
 
-      Navigator.pushNamed(context, '/gallery');
+      Navigator.pushNamed(context, AppRoutes.gallery);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('保存エラー: $e')),
@@ -185,7 +186,7 @@ class _TagLensPageState extends State<TagLensPage> {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/gallery'),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.gallery),
             child: const Text('ギャラリー'),
           )
         ],

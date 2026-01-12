@@ -7,7 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
-import 'pages/auth_page.dart';
+import 'routes.dart';
 
 void main() {
   // Use runZonedGuarded to catch any errors that are not caught by Flutter.
@@ -81,7 +81,8 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       debugShowCheckedModeBanner: false,
-      home: const AuthPage(), // AuthPage will handle UI based on auth state
+      initialRoute: AppRoutes.auth,
+      routes: AppRoutes.routes,
     );
   }
 }
