@@ -11,6 +11,7 @@ import '../services/google_vision.dart';
 import '../services/tag_translator.dart';
 import '../services/local_storage.dart';
 import '../services/fb_auth.dart';
+import '../services/tag_image_saver.dart';
 
 class TagLensPage extends StatefulWidget {
   const TagLensPage({super.key});
@@ -46,7 +47,7 @@ class _TagLensPageState extends State<TagLensPage> {
     final prefs = await SharedPreferences.getInstance();
     final apiKey = dotenv.env['GOOGLE_VISION_API_KEY'] ?? '';
     setState(() {
-      aiEnabled = prefs.getBool('aiTaggingEnabled') ?? false;
+      aiEnabled = prefs.getBool('aiTaggingEnabled') ?? true;
       if (apiKey.isEmpty) {
         errorMessage = 'Google Vision API キーが設定されていません';
       }
@@ -130,7 +131,7 @@ class _TagLensPageState extends State<TagLensPage> {
   // ===============================
   Future<void> saveImage() async {
     if (imageBytes == null || selectedTags.isEmpty) return;
-//-=-=-=-=fbStorageに保存する処理-=-=-=-=
+
     try {
       setState(() => loading = true);
 
@@ -143,18 +144,13 @@ class _TagLensPageState extends State<TagLensPage> {
       }
 
       final uid = user.uid;
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final storagePath = 'users/$uid/$fileName';
-
-      final storageRef = FirebaseStorage.instance.ref().child(storagePath);
-      final metadata = SettableMetadata(contentType: 'image/jpeg');
-
-      final uploadTask = storageRef.putData(imageBytes!, metadata);
-      await uploadTask;
-      final downloadUrl = await storageRef.getDownloadURL();
-
-      // SharedPreferences に保存（ローカルのギャラリーは URL をパスとして格納）
-      await local.saveImageTags(downloadUrl, selectedTags.toList());
+      
+      // TagImageSaver で処理を統一
+      await TagImageSaver.saveImageWithTags(
+        imageBytes: imageBytes!,
+        tags: selectedTags.toList(),
+        uid: uid,
+      );
 
       if (!mounted) return;
 
@@ -209,7 +205,7 @@ class _TagLensPageState extends State<TagLensPage> {
                       ),
                       child: imageBytes == null
                           ? const Center(
-                              child: Text('クリックして画像を選択'),
+                              child: Text('クリックして画像を選択'),//v2：更新の確認
                             )
                           : Image.memory(imageBytes!, fit: BoxFit.cover),
                     ),
