@@ -5,6 +5,7 @@ import 'map_page.dart';
 import 'sns_page.dart';
 import 'settings_page.dart';
 import 'auth_page.dart';
+import 'cloud_gallery_page.dart';
 
 class MainTabPage extends StatefulWidget {
   const MainTabPage({super.key});
@@ -17,7 +18,7 @@ class _MainTabPageState extends State<MainTabPage> {
   int _selectedIndex = 0;
 
   static const List<Widget> _pages = [
-    HomePage(),
+    CloudGalleryPage(),
     TagLensPage(),
     MapPage(),
     SnsPage(),
@@ -53,8 +54,8 @@ class _MainTabPageState extends State<MainTabPage> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.photo_album),
-            label: '写真一覧',
+            icon: Icon(Icons.cloud),
+            label: 'クラウド',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
