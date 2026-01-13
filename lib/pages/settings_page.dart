@@ -27,15 +27,6 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  Future<void> _saveAiTaggingEnabled(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('aiTaggingEnabled', value);
-    if (!mounted) return;
-    setState(() {
-      _aiTaggingEnabled = value;
-    });
-  }
-
   Future<void> _signOut() async {
     try {
       await FbAuth.instance.signOut();
