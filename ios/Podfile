@@ -10,28 +10,42 @@ project 'Runner', {
   'Release' => :release,
 }
 
-def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "Could not find Generated.xcconfig! Please ensure `flutter packages get` has been run and that you have opened the Xcode project via Runner.xcworkspace."
-  end
+# This function is now provided by podhelper.rb
+# def flutter_root
+#   generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+#   unless File.exist?(generated_xcode_build_settings_path)
+#     raise "Could not find Generated.xcconfig! Please ensure `flutter packages get` has been run and that you have opened the Xcode project via Runner.xcworkspace."
+#   end
+# 
+#   File.read(generated_xcode_build_settings_path).each_line do |line|
+#     matches = line.match(/FLUTTER_ROOT=(.*)/)
+#     return matches[1].strip if matches
+#   end
+#   raise "Could not find FLUTTER_ROOT in Generated.xcconfig!"
+# end
 
-  File.read(generated_xcode_build_settings_path).each_line do |line|
-    matches = line.match(/FLUTTER_ROOT=(.*)/)
-    return matches[1].strip if matches
-  end
-  raise "Could not find FLUTTER_ROOT in Generated.xcconfig!"
+# Load the Flutter-specific pod helper.
+flutter_application_path = File.expand_path('..', __dir__)
+flutter_ios_podfile_path = File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+unless File.exist?(flutter_ios_podfile_path)
+    raise "podhelper.rb not found at #{flutter_ios_podfile_path}. Did you run `flutter pub get`?"
 end
+require flutter_ios_podfile_path
+
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # Replaced with the new method from podhelper.rb
+  # flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  install_all_pods(flutter_application_path)
+
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
+    # This function is also loaded from podhelper.rb
     flutter_additional_ios_build_settings(target)
   end
 end

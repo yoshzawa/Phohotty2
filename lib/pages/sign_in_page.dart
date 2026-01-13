@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart'; // Import Crashlytics
 import '../services/fb_auth.dart';
 import 'user_create_page.dart';
 
@@ -29,14 +30,18 @@ class SignInPage extends StatelessWidget {
                       if (result == null && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('サインインがキャンセルされました')));
                       }
-                    } on FirebaseAuthException catch (e) {
+                    } on FirebaseAuthException catch (e, s) { // Capture stack trace
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('サインインに失敗しました: ${e.message}')));
                       }
-                    } catch (e) {
+                      // Report to Crashlytics
+                      FirebaseCrashlytics.instance.recordError(e, s, reason: 'Google Sign-In FirebaseAuthException');
+                    } catch (e, s) { // Capture stack trace
                       if (context.mounted) {
                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('予期せぬエラーが発生しました: $e')));
                       }
+                      // Report to Crashlytics
+                      FirebaseCrashlytics.instance.recordError(e, s, reason: 'Unexpected error on Google Sign-In');
                     }
                   },
                   icon: const Icon(Icons.login, color: Colors.red), // Example color
@@ -53,14 +58,18 @@ class SignInPage extends StatelessWidget {
                        if (result == null && context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('サインインがキャンセルされました')));
                       }
-                    } on FirebaseAuthException catch (e) {
+                    } on FirebaseAuthException catch (e, s) { // Capture stack trace
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('サインインに失敗しました: ${e.message}')));
                       }
-                    } catch (e) {
+                      // Report to Crashlytics
+                      FirebaseCrashlytics.instance.recordError(e, s, reason: 'Microsoft Sign-In FirebaseAuthException');
+                    } catch (e, s) { // Capture stack trace
                       if (context.mounted) {
                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('予期せぬエラーが発生しました: $e')));
                       }
+                      // Report to Crashlytics
+                      FirebaseCrashlytics.instance.recordError(e, s, reason: 'Unexpected error on Microsoft Sign-In');
                     }
                   },
                   icon: const Icon(Icons.login, color: Colors.blue), // Example color

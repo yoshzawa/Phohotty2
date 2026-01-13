@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class CloudGalleryPage extends StatefulWidget {
   const CloudGalleryPage({super.key});
@@ -17,13 +17,12 @@ class _CloudGalleryPageState extends State<CloudGalleryPage> {
   Stream<QuerySnapshot> _getUserImageStream() {
     final user = _auth.currentUser;
     if (user == null) {
-      // ユーザーがログインしていない場合は空のストリームを返す
       return Stream.empty();
     }
     return _firestore
-        .collection('photos') // Firestoreのコレクション名を'photos'と想定
-        .where('userId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
+        .collection('users')
+        .doc(user.uid)
+        .collection('gallery')
         .snapshots();
   }
 
@@ -31,75 +30,95 @@ class _CloudGalleryPageState extends State<CloudGalleryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("クラウドギャラリー"),
+        title: const Text('クラウドギャラリー'),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _getUserImageStream(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text("エラー: ${snapshot.error}"));
-          }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("画像がありません"));
+
+          if (snapshot.hasError) {
+            final error = snapshot.error;
+            final stackTrace = snapshot.stackTrace;
+            final user = _auth.currentUser;
+            final uid = user?.uid ?? 'unknown_user';
+            final firestorePath = 'users/$uid/gallery';
+
+            String reason = 'Error fetching from Cloud Gallery';
+            if (error is FirebaseException && error.code == 'permission-denied') {
+              reason = 'Firestore permission denied in Cloud Gallery';
+            }
+            
+            FirebaseCrashlytics.instance.setCustomKey('firestore_path', firestorePath);
+            FirebaseCrashlytics.instance.setCustomKey('user_id', uid);
+            FirebaseCrashlytics.instance.recordError(error, stackTrace, reason: reason, fatal: false);
+
+            debugPrint('Firestore Error reported to Crashlytics: $error');
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.cloud_off, color: Colors.red, size: 50),
+                    SizedBox(height: 16),
+                    Text(
+                      'データの取得に失敗しました。',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'この問題は開発者に自動的に報告されました。',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
-          final documents = snapshot.data!.docs;
-          return _buildGalleryGrid(documents);
-        },
-      ),
-    );
-  }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('アップロードされた写真はありません。'));
+          }
 
-  Widget _buildGalleryGrid(List<QueryDocumentSnapshot> documents) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3, // 3列で表示
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-      ),
-      itemCount: documents.length,
-      itemBuilder: (context, index) {
-        final doc = documents[index];
-        final data = doc.data() as Map<String, dynamic>;
-        final imageUrl = data['imageUrl'] as String?;
-        final tags = (data['tags'] as List<dynamic>? ?? []).cast<String>();
-
-        if (imageUrl == null || imageUrl.isEmpty) {
-          return Container(
-            color: Colors.grey.shade200,
-            child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
-          );
-        }
-
-        return GridTile(
-          footer: GridTileBar(
-            backgroundColor: Colors.black45,
-            title: Text(
-              tags.join(', '),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10),
+          final imageDocs = snapshot.data!.docs;
+          return GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 4.0,
+              mainAxisSpacing: 4.0,
             ),
-          ),
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Colors.grey.shade200,
-                child: const Center(child: Icon(Icons.error, color: Colors.red)),
+            itemCount: imageDocs.length,
+            itemBuilder: (context, index) {
+              final doc = imageDocs[index];
+              final imageUrl = doc.get('imageUrl') as String?;
+
+              if (imageUrl == null) {
+                return const GridTile(
+                  child: Icon(Icons.broken_image, color: Colors.grey),
+                );
+              }
+
+              return GridTile(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.error, color: Colors.red);
+                  },
+                ),
               );
             },
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

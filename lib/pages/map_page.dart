@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -56,37 +57,64 @@ class _MapPageState extends State<MapPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final photosSnapshot = await FirebaseFirestore.instance
-        .collection('photos')
-        .where('userId', isEqualTo: user.uid)
-        .get();
+    final firestorePath = 'users/${user.uid}/gallery';
 
-    final Set<Marker> newMarkers = {};
-    for (final doc in photosSnapshot.docs) {
-      final data = doc.data();
-      final location = data['location'] as GeoPoint?;
-      final imageUrl = data['imageUrl'] as String?;
-      final tags = (data['tags'] as List<dynamic>? ?? []).cast<String>();
+    try {
+      final photosSnapshot = await FirebaseFirestore.instance
+          .collection('users').doc(user.uid).collection('gallery')
+          .get();
 
-      if (location != null && imageUrl != null) {
-        final marker = Marker(
-          markerId: MarkerId(doc.id),
-          position: LatLng(location.latitude, location.longitude),
-          onTap: () => _showPhotoDialog(imageUrl, tags),
-        );
-        newMarkers.add(marker);
+      final Set<Marker> newMarkers = {};
+      for (final doc in photosSnapshot.docs) {
+        final data = doc.data();
+        final location = data['location'] as GeoPoint?;
+        final imageUrl = data['imageUrl'] as String?;
+        final tags = (data['tags'] as List<dynamic>? ?? []).cast<String>();
+
+        if (location != null && imageUrl != null) {
+          final marker = Marker(
+            markerId: MarkerId(doc.id),
+            position: LatLng(location.latitude, location.longitude),
+            onTap: () => _showPhotoDialog(imageUrl, tags),
+          );
+          newMarkers.add(marker);
+        }
       }
-    }
 
-    setState(() {
-      _markers.clear();
-      _markers.addAll(newMarkers);
-    });
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('マーカーを再読み込みしました')),
-      );
+      setState(() {
+        _markers.clear();
+        _markers.addAll(newMarkers);
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('マーカーを再読み込みしました')),
+        );
+      }
+    } on FirebaseException catch (e, s) {
+        final reason = 'Error loading photo markers on map';
+        FirebaseCrashlytics.instance.setCustomKey('firestore_path', firestorePath);
+        FirebaseCrashlytics.instance.setCustomKey('user_id', user.uid);
+        FirebaseCrashlytics.instance.setCustomKey('user_email', user.email ?? 'no_email');
+        FirebaseCrashlytics.instance.setCustomKey('firestore_error_code', e.code);
+        FirebaseCrashlytics.instance.recordError(e, s, reason: reason, fatal: false);
+        
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('マーカーの読み込みに失敗しました: ${e.message}')),
+            );
+        }
+    } catch (e, s) {
+        final reason = 'Unexpected error loading photo markers';
+        FirebaseCrashlytics.instance.setCustomKey('firestore_path', firestorePath);
+        FirebaseCrashlytics.instance.setCustomKey('user_id', user.uid);
+        FirebaseCrashlytics.instance.recordError(e, s, reason: reason, fatal: false);
+
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('予期せぬエラーでマーカーを読み込めませんでした。')),
+            );
+        }
     }
   }
 
